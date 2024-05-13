@@ -1,0 +1,26 @@
+system:
+  packages:
+    - zsh
+  services:
+  commands:
+
+users:
+  rakan:
+    groups:
+      - rakan
+      - docker
+      - wheel
+    default-shell: "zsh"
+    repos:
+      ".dotfiles": "github.com/rakanalh/dotfiles.git"
+    links:
+      ".zshrc": "./.zshrc"
+    commands:
+      - "ls -la"
+    programs:
+      starship:
+        enable: true
+        enable-zsh-integration: true
+        extra-config:
+      zsh:
+        enable: true

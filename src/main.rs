@@ -14,6 +14,7 @@ use std::process::exit;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use traits::OperatingSystem;
+use utils::execute_command;
 
 use crate::cli::{App, Command};
 
@@ -28,6 +29,9 @@ struct Home {
     #[serde(rename = "default-shell")]
     default_shell: String,
     links: HashMap<String, String>,
+    repos: HashMap<String, String>,
+    services: Vec<String>,
+    commands: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,6 +58,11 @@ fn main() -> anyhow::Result<()> {
     let os = os_info::get();
     info!("Detected OS: {:?}", os.os_type());
     info!("Architecture: {:?}", os.architecture());
+
+    // TODO: Install packages required for initialization:
+    // 1. Git
+    // 2. OpenSSH
+    // 2. GnuPG
 
     let handler: Box<dyn OperatingSystem> = match os.os_type() {
         os_info::Type::Arch => Box::new(Arch::init()?),
@@ -120,9 +129,24 @@ fn sync_home(
             os.user_create(&username, home_config.groups, home_config.default_shell)?;
         }
 
-        // Check links
-        // TODO: Do we need a lock file to compare old / new & remove old links?
-        println!("Links: {:?}", home_config.links);
+        std::env::set_current_dir(format!("/home/{}", &username))?;
+
+        for command in home_config.commands {
+            execute_command(command)?;
+        }
+
+        for (path, repository) in home_config.repos {
+            os.repo_clone(&path, &repository)?;
+        }
+
+        for (destination, source) in home_config.links {
+            os.symlink_add(&source, &destination)?;
+        }
+
+        for service in home_config.services {
+            os.service_enable(&service)?;
+            os.service_start(&service)?;
+        }
     }
 
     Ok(())

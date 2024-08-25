@@ -1,4 +1,7 @@
+use anyhow::anyhow;
 use std::process::ExitStatus;
+
+use git2::Repository;
 
 use crate::utils::execute_command;
 
@@ -40,5 +43,23 @@ pub trait OperatingSystem {
             default_shell,
             user
         ))
+    }
+
+    fn repo_clone(&self, path: &str, repo_url: &str) -> anyhow::Result<()> {
+        Repository::clone(repo_url, path)
+            .map_err(|e| anyhow!(e))
+            .map(|_| ())
+    }
+
+    fn symlink_add(&self, source: &str, destination: &str) -> anyhow::Result<()> {
+        Ok(std::os::unix::fs::symlink(source, destination)?)
+    }
+
+    fn service_enable(&self, service: &str) -> anyhow::Result<()> {
+        execute_command(format!("systemctl --user enable {}", service)).map(|_| ())
+    }
+
+    fn service_start(&self, service: &str) -> anyhow::Result<()> {
+        execute_command(format!("systemctl --user start {}", service)).map(|_| ())
     }
 }

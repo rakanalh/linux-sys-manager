@@ -1,10 +1,11 @@
 use std::process::ExitStatus;
 
-use crate::{
-    constants::ARCH_SUPPORTED_PACKAGE_MANAGERS, traits::OperatingSystem, utils::execute_command,
-};
+use crate::{traits::OperatingSystem, utils::execute_command};
 use anyhow::bail;
+use constants::ARCH_SUPPORTED_PACKAGE_MANAGERS;
 use quale::which;
+
+mod constants;
 
 pub struct Arch {
     package_manager: &'static str,
